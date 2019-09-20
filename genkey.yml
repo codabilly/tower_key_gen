@@ -1,0 +1,109 @@
+---
+- name: playbook for creating rsa keys
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    # - name: Run command to generate key pairs
+    #   delegate_to: localhost
+    #   # ping:
+    #   command: ssh-keygen -t rsa -f ./amg-key -N echoechoecho
+    #   register: log
+
+    # - debug: var=log
+
+    - name: Store private key
+      set_fact:
+        private_key: "{{ lookup('file', 'amg-key') }}"
+
+    - name: Store private key
+      set_fact:
+        public_key: "{{ lookup('file', 'amg-key.pub') }}"
+
+    - debug: var=private_key
+
+    - name: Registering Private Key in the Tower Server
+      vars:
+        auth: Bearer Y2Dgbx4f6Cw99sRjCEzPmIsEkOHAoO
+        target: http://paradox.els.com
+        payload_scm_credential:
+          name: quark
+          organization: 37
+          user: 1
+          # kind: scm
+          # username: bilorge
+          # ssh_key_unlock: echoechoecho
+          credential_type: 2
+          inputs:
+              ssh_key_data: "{{ private_key }}"
+      uri:
+        method: POST
+        headers:
+          Authorization: "{{ auth }}"
+        status_code: 201
+        url: "{{ target }}/api/v2/credentials/"
+        body_format: json
+        body: "{{ payload_scm_credential }}"
+        return_content: yes
+      register: cred_res
+
+    - debug: var=cred_res
+
+    # - name: Updating Private Key in the Tower Server
+    #   vars:
+    #     auth: Bearer Y2Dgbx4f6Cw99sRjCEzPmIsEkOHAoO
+    #     target: http://paradox.els.com
+    #     payload_scm_credential:
+    #       name: quark
+    #       organization: 37
+    #       kind: scm
+
+    #       # username: bilorge
+    #       # ssh_key_unlock: echoechoecho
+    #       ssh_key_data: "{{ lookup('file', 'amg-key') }}"
+    #       credential_type: 2
+    #   uri:
+    #     method: PUT
+    #     headers:
+    #       Authorization: "{{ auth }}"
+    #     status_code: 200
+    #     url: "{{ target }}/api/v2/credentials/12/"
+    #     body_format: json
+    #     body: "{{ payload_scm_credential }}"
+    #     return_content: yes
+    #   register: cred_res
+
+    # - debug: var=cred_res
+
+    # - debug:
+    #     msg:
+    #       - "Private Key: {{ private_key }}"
+    #       - "Public Key: {{ public_key }}"
+
+    # - name: Create the file in which to store the key
+    #   file:
+    #     path: private_key
+    #     state: touch
+
+    # - name: Store the private key to make sure there are no funky chars
+    #   copy:
+    #     dest: private_key
+    #     content: "{{ private_key }}"
+
+
+    # - name: Create the file in which to store the key
+    #   file:
+    #     path: public_key
+    #     state: touch
+
+    # - name: Store the private key to make sure there are no funky chars
+    #   copy:
+    #     dest: public_key
+    #     content: "{{ public_key }}"
+
+    # - name: read the private key
+    #   delegate_to: localhost
+    #   debug: var=item
+    #   with_file:
+    #     -  amg-key
+    #     -  amg-key.pub
